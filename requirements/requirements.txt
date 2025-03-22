@@ -1,0 +1,8 @@
+joblib==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+pydantic==2.10.6
+ruamel.yaml==0.18.10
+scikit-learn==1.6.1
+strictyaml==1.6.2
+pytest>=7.2.0,<8.0.0
