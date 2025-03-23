@@ -1,0 +1,54 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  train-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.1'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install pytest
+          pip install build
+          pip install -r requirements/requirements.txt
+      - name: Train model
+        run: |
+          python bikeshare_model/train_pipeline.py
+      - name: Predict
+        run: |
+          python bikeshare_model/predict.py
+      - name: Run tests
+        run: |
+          pytest tests/
+      - name: Build package
+        run: python3 -m build
+
+      - name: Copy wheel file
+        run: |
+          cp dist/*.whl ./api/
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER_NAME }}
+          password: ${{ secrets.DOCKER_PASS_NAME }}
+
+      - name: Build Docker image
+        run: docker build -t aniketrastogi1987/bikeshare-api:latest ./api
+
+      - name: Push Docker image
+        run: docker push aniketrastogi1987/bikeshare-api:latest
+
+      - name: Log out from Docker
+        run: docker logout
