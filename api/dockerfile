@@ -1,18 +1,39 @@
-# Use an official lightweight Python image
 FROM python:3.9-slim
 
-# Set the working directory inside the container
-WORKDIR /app
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
 
-# Copy requirements.txt and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        libc6-dev \
+        python3-dev \
+        libpq-dev \
+        gfortran \
+        libopenblas-dev \
+        liblapack-dev \
+        cmake \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the application files
+# Set the working directory
+WORKDIR /api
+
+# Copy requirements and wheel file
+COPY requirements.txt bikeshare_model-0.0.1-py3-none-any.whl ./
+
+# Install dependencies with detailed logging
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir bikeshare_model-0.0.1-py3-none-any.whl
+
+# Copy the application
 COPY . .
 
-# Expose the port on which FastAPI will run
 EXPOSE 8000
 
-# Command to start the FastAPI app
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
